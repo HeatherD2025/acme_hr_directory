@@ -2,12 +2,12 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 const pg = require("pg");
-const cors = require("cors");
 const PORT = 3000;
+const client = new pg.Client(process.env.DB_URL);
+const cors = require("cors");
 app.use(cors());
 app.use(express.json());
 app.use(require("morgan")("dev"));
-const client = new pg.Client("postgres://localhost/acme_hr_db");
 
 app.listen(PORT, () => {
   console.log(`I am listening on port number ${PORT}`);
@@ -25,14 +25,15 @@ app.get("/api/employees", async (req, res, next) => {
     const response = await client.query(SQL);
     res.status(200).json(response.rows);
   } catch (error) {
+    console.log(error);
     next(error);
   }
 });
 
-app.get("/api/flavors/:id", async (req, res, next) => {
+app.get("/api/departments", async (req, res, next) => {
   try {
     const SQL = `
-          SELECT id from flavors
+          SELECT * FROM departments
       `;
     const response = await client.query(SQL);
     res.status(200).json(response.rows);
@@ -42,24 +43,24 @@ app.get("/api/flavors/:id", async (req, res, next) => {
   }
 });
 
-app.post("/api/flavors", async (req, res, next) => {
+app.post("/api/employees", async (req, res, next) => {
   try {
-    const { name, is_favorite } = req.body;
+    const { name, department } = req.body;
     const SQL = `
-          INSERT INTO flavors(name, is_favorite) VALUES($1, $2) RETURNING *
+          INSERT INTO employees(name, departments_id) VALUES($1, (SELECT id from departments where name =$2)) RETURNING *
       `;
-    const response = await client.query(SQL, [name, is_favorite]);
+    const response = await client.query(SQL, [name, department]);
     res.status(201).send(response.rows);
   } catch (error) {
     next(error);
   }
 });
 
-app.delete("/api/flavors/:id", async (req, res, next) => {
+app.delete("/api/employees/:id", async (req, res, next) => {
   try {
     const { id } = req.params;
     const SQL = `
-          DELETE FROM flavors WHERE id = $1
+          DELETE FROM employees WHERE id = $1
       `;
     await client.query(SQL, [id]);
     res.sendStatus(204);
@@ -69,17 +70,17 @@ app.delete("/api/flavors/:id", async (req, res, next) => {
   }
 });
 
-app.put("/api/flavors/:id", async (req, res, next) => {
+app.put("/api/employees/:id", async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { is_favorite } = req.body;
+    const { department } = req.body;
     const SQL = `
-              UPDATE flavors
-              SET is_favorite=$1, updated_at= now()
+              UPDATE employees
+              SET departments_id=(SELECT id from departments where name =$1), updated_at= now()
               WHERE id=$2 
               RETURNING *
           `;
-    const response = await client.query(SQL, [is_favorite, id]);
+    const response = await client.query(SQL, [department, id]);
     res.status(200).json(response.rows[0]);
   } catch (error) {
     next(error);
