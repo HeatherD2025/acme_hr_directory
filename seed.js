@@ -12,6 +12,7 @@ const client = new pg.Client(process.env.DB_URL);
 const init = async (req, res, next) => {
   try {
     await client.connect();
+    
     const SQL = `
             DROP TABLE IF EXISTS departments CASCADE;
             CREATE TABLE departments(
@@ -29,16 +30,17 @@ const init = async (req, res, next) => {
                 name VARCHAR(100),
                 created_at TIMESTAMP DEFAULT now(),
                 updated_at TIMESTAMP DEFAULT now(),
-                // departments_id UUID REFERENCES employees(id) NOT NULL
+
             );
             INSERT INTO employees(name, departments_id) VALUES('Brian', (SELECT id from departments where name ='HR'));
             INSERT INTO employees(name, departments_id) VALUES('Lisa',  (SELECT id from departments where name ='Marketing'));
             INSERT INTO employees(name, departments_id) VALUES('Greg',  (SELECT id from departments where name ='Sales'));
             INSERT INTO employees(name, departments_id) VALUES('Paula', (SELECT id from departments where name ='International operations'));
             `;
+
     await client.query(SQL);
-    await client.end();
     console.log("DB is seeded");
+    await client.end();
   } catch (error) {
     console.error(error);
   }

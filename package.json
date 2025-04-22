@@ -28,6 +28,7 @@
     "dotenv": "^16.5.0",
     "epress": "^0.0.1-security",
     "express": "^5.1.0",
+    "http-errors": "^2.0.0",
     "morgan": "^1.10.0",
     "pg": "^8.14.1",
     "react-redux": "^9.2.0"

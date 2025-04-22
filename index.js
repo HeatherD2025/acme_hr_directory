@@ -13,6 +13,10 @@ app.listen(PORT, () => {
   console.log(`I am listening on port number ${PORT}`);
 });
 
+const init = async () => {
+  await client.connect();
+};
+
 app.get("/", (req, res, next) => {
   res.send("Does this work?");
 });
@@ -47,10 +51,10 @@ app.post("/api/employees", async (req, res, next) => {
   try {
     const { name, department } = req.body;
     const SQL = `
-          INSERT INTO employees(name, departments_id) VALUES($1, (SELECT id from departments where name =$2)) RETURNING *
+          INSERT INTO employees(name, departments_id) VALUES($1, (SELECT id FROM departments WHERE name =$2)) RETURNING *
       `;
     const response = await client.query(SQL, [name, department]);
-    res.status(201).send(response.rows);
+    res.status(201).json(response.rows);
   } catch (error) {
     next(error);
   }
@@ -76,7 +80,7 @@ app.put("/api/employees/:id", async (req, res, next) => {
     const { department } = req.body;
     const SQL = `
               UPDATE employees
-              SET departments_id=(SELECT id from departments where name =$1), updated_at= now()
+              SET departments_id=(SELECT id FROM departments WHERE name =$1), updated_at= now()
               WHERE id=$2 
               RETURNING *
           `;
@@ -86,9 +90,5 @@ app.put("/api/employees/:id", async (req, res, next) => {
     next(error);
   }
 });
-
-const init = async () => {
-  await client.connect();
-};
 
 init();
